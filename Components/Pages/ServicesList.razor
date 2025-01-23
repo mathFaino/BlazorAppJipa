@@ -1,0 +1,139 @@
+@page "/servicesList"
+@rendermode InteractiveServer
+
+@using ServicesBlazor.Data.Model
+@using ServicesBlazor.Data.Services
+@inject ServicesService ServicesService
+
+<div class="container mt-4">
+    <h3>Consulta de Serviços</h3>
+    <p>Utilize o menu lateral a esquerda e escolha a opção desejada</p>
+
+    <div class="form-group">
+        <label for="searchInput">Texto de busca:</label>
+        <InputText id="searchInput" class="form-control" @bind-Value="searchTerm" @oninput="(e) => OnSearchInput(e.Value.ToString())"/>
+    </div>
+    <button class="btn btn-primary mb-3">
+        <NavLink class="text-white" href="/addServices">Novo +</NavLink>
+    </button>
+
+    <table class="table table-striped">
+        <thead class="thead-dark">
+        <tr>
+            <th>Nome</th>
+            <th>Tipo</th>
+            <th>Valor</th>
+            <th>Tempo</th>
+            <th>Opções</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var service in filteredServices)
+        {
+            <tr>
+                <td>@service.Nome</td>
+                <td>@service.Tipo</td>
+                <td>@service.ValorSugerido</td>
+                <td>@service.TempoEstimado</td>
+                <td>
+                    <button class="btn btn-warning btn-sm" @onclick="() => EditService(service.Id)">Edit</button>
+                    <button class="btn btn-danger btn-sm" @onclick="() => DeleteService(service.Id)">Delete</button>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+
+    @if (isEditing)
+    {
+        <div class="card mt-4">
+            <div class="card-body">
+                <EditForm Model="@editService" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="form-group">
+                        <label for="nomeInput">Nome:</label>
+                        <InputText id="nomeInput" class="form-control" @bind-Value="editService.Nome" />
+                    </div>
+                    <div class="form-group">
+                        <label for="tipoInput">Tipo:</label>
+                        <InputText id="tipoInput" class="form-control" @bind-Value="editService.Tipo" />
+                    </div>
+                    <div class="form-group">
+                        <label for="valorInput">Valor:</label>
+                        <InputNumber id="valorInput" class="form-control" @bind-Value="editService.ValorSugerido" />
+                    </div>
+                    <div class="form-group">
+                        <label for="tempoInput">Tempo:</label>
+                        <InputText id="tempoInput" class="form-control" @bind-Value="editService.TempoEstimado" />
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-secondary" @onclick="CancelEdit">Cancel</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<ServicesModel> services;
+    private ServicesModel editService;
+    private bool isEditing = false;
+    private string searchTerm = string.Empty;
+    private List<ServicesModel> filteredServices;
+
+    protected override void OnInitialized()
+    {
+        services = ServicesService.GetAllServices();
+        filteredServices = services;
+    }
+
+    private void EditService(int id)
+    {
+        editService = services.FirstOrDefault(u => u.Id == id);
+        isEditing = true;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        await ServicesService.UpdateService(editService);
+        services = ServicesService.GetAllServices();
+        FilterServices();
+        isEditing = false;
+    }
+
+    private void CancelEdit()
+    {
+        isEditing = false;
+        editService = null;
+    }
+
+    private async Task DeleteService(int id)
+    {
+        await ServicesService.DeleteService(id);
+        services = ServicesService.GetAllServices();
+        FilterServices();
+    }
+
+    private void FilterServices()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filteredServices = services;
+        }
+        else
+        {
+            filteredServices = services.Where(u => u.Nome.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+    }
+    private void OnSearchInput(string value)
+    {
+        searchTerm = value;
+        FilterServices();
+    }
+
+}

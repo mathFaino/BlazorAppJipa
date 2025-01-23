@@ -1,0 +1,85 @@
+@page "/addServices"
+@rendermode InteractiveServer
+@using ServicesBlazor.Data.Model
+@using ServicesBlazor.Data.Services
+@inject ServicesService ServicesService
+@inject NavigationManager NavigationManager
+
+<div class="container mt-4">
+    <h3>Cadastro de Serviços</h3>
+    <p>Cadastre um novo serviço e mantenha seus dados atualizados</p>
+
+    <EditForm Model="@newService" OnValidSubmit="@HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="form-group">
+            <label for="companySelect">Empresa:</label>
+            <select id="companySelect" class="form-control" @bind="newService.CompanyId">
+                <option value="">Selecione uma empresa</option>
+                @if (companies != null)
+                {
+                    @foreach (var company in companies)
+                    {
+                        <option value="@company.Id">@company.Razao</option>
+                    }
+                }
+            </select>
+            <ValidationMessage For="@(() => newService.CompanyId)" />
+        </div>
+
+        <div class="form-group">
+            <label for="nomeInput">Nome:</label>
+            <InputText id="nomeInput" class="form-control" @bind-Value="newService.Nome" />
+            <ValidationMessage For="@(() => newService.Nome)" />
+        </div>
+        <div class="form-group">
+            <label for="valorInput">Valor Sugerido:</label>
+            <InputNumber id="valorInput" class="form-control" @bind-Value="newService.ValorSugerido" />
+            <ValidationMessage For="@(() => newService.ValorSugerido)" />
+        </div>
+        <div class="form-group">
+            <label for="tempoInput">Tempo Estimado:</label>
+            <InputText id="tempoInput" class="form-control" @bind-Value="newService.TempoEstimado" />
+            <ValidationMessage For="@(() => newService.TempoEstimado)" />
+        </div>
+        <div class="form-group">
+            <label for="garantiaInput">Garantia:</label>
+            <InputText id="garantiaInput" class="form-control" @bind-Value="newService.Garantia" />
+            <ValidationMessage For="@(() => newService.Garantia)" />
+        </div>
+        <div class="form-group">
+            <label for="tipoInput">Tipo:</label>
+            <InputText id="tipoInput" class="form-control" @bind-Value="newService.Tipo" />
+            <ValidationMessage For="@(() => newService.Tipo)" />
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <button type="button" class="btn btn-secondary" @onclick="Cancel"><NavLink class="text-white" href="/servicesList">Cancelar</NavLink></button>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    private ServicesModel newService = new ServicesModel();
+    private List<CompanyModel> companies = new List<CompanyModel>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        companies = await ServicesService.GetAllCompaniesAsync();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        await ServicesService.AddService(newService);
+        newService = new ServicesModel();
+        NavigationManager.NavigateTo("/servicesList");
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/servicesList");
+    }
+
+}
